@@ -1,0 +1,103 @@
+-- Tạo một bảng để lưu trữ thông tin và trạng thái di chuyển
+local ui_elements = {}
+local is_dragging = false
+local dragged_element = nil
+local drag_offset_x, drag_offset_y = 0, 0
+
+-- Thông tin cho ô tên nhân vật (màu đỏ)
+ui_elements.character_name = {
+  name = "character_name", -- Thêm tên để dễ quản lý
+  x = 100,
+  y = 50,
+  width = 300,
+  height = 50,
+  color = { 1, 0, 0 },
+  text = "Tên Nhân Vật"
+}
+
+-- Thông tin cho ô FPS (màu xanh dương)
+ui_elements.fps = {
+  name = "fps",
+  x = 450,
+  y = 300,
+  width = 150,
+  height = 40,
+  color = { 0, 1, 1 },
+  text = "FPS: 60"
+}
+
+-- Thông tin cho ô ghi chú (màu hồng)
+ui_elements.note = {
+  name = "note",
+  x = 150,
+  y = 150,
+  width = 400,
+  height = 100,
+  color = { 1, 0, 1 },
+  text = "Đây là ghi chú."
+}
+
+-- Hàm vẽ hình chữ nhật
+local function draw_rectangle(x, y, width, height, color)
+  love.graphics.setColor(color[1], color[2], color[3])
+  love.graphics.rectangle("line", x, y, width, height)
+end
+
+-- Hàm vẽ chữ
+local function draw_text(text, x, y, color)
+  love.graphics.setColor(color[1], color[2], color[3])
+  love.graphics.print(text, x + 5, y + 5)
+end
+
+function love.draw()
+  -- Vẽ tất cả các phần tử UI
+  for _, element in pairs(ui_elements) do
+    draw_rectangle(element.x, element.y, element.width, element.height, element.color)
+    if element.name == "note" then
+      love.graphics.setColor(1, 1, 1)
+      love.graphics.printf(element.text, element.x + 5, element.y + 5, element.width, "left")
+    else
+      draw_text(element.text, element.x, element.y, { 1, 1, 1 }) -- Màu chữ trắng cho tên và mặc định
+      if element.name == "fps" then
+        draw_text(element.text, element.x, element.y, { 0, 0, 0 }) -- Màu chữ đen cho FPS
+      end
+    end
+  end
+end
+
+function love.update(dt)
+  -- Cập nhật FPS
+  ui_elements.fps.text = "FPS: " .. tostring(love.timer.getFPS())
+
+  -- Cập nhật vị trí của phần tử đang được kéo
+  if is_dragging and dragged_element then
+    dragged_element.x = love.mouse.getX() - drag_offset_x
+    dragged_element.y = love.mouse.getY() - drag_offset_y
+  end
+end
+
+function love.mousepressed(x, y, button, istouch, presses)
+  if button == 1 then -- Nút chuột trái
+    -- Kiểm tra xem chuột có nằm trong bất kỳ phần tử UI nào không (kiểm tra ngược để ưu tiên phần tử trên cùng)
+    for _, element in pairs(ui_elements) do
+      if x > element.x and x < element.x + element.width and y > element.y and y < element.y + element.height then
+        is_dragging = true
+        dragged_element = element
+        drag_offset_x = x - element.x
+        drag_offset_y = y - element.y
+        break -- Chỉ cho phép kéo một phần tử tại một thời điểm
+      end
+    end
+  end
+end
+
+function love.mousereleased(x, y, button, istouch, presses)
+  if button == 1 then -- Nút chuột trái
+    is_dragging = false
+    dragged_element = nil
+  end
+end
+
+function love.load()
+  love.window.setTitle("Hiển Thị Thông Tin (Có Thể Di Chuyển)")
+end
